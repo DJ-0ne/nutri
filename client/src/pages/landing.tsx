@@ -21,11 +21,13 @@ export default function Landing() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <Link href="/api/login">
-              <Button size="lg" className="rounded-full px-8 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all">
-                Get Started
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="rounded-full px-8 shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
+              onClick={() => window.location.href = "/api/login"}
+            >
+              Get Started
+            </Button>
           </div>
         </div>
       </nav>
@@ -47,12 +49,14 @@ export default function Landing() {
                 Your personal AI nutrition coach tailored for Kenyan lifestyles. Track local foods, get personalized advice, and build healthier habits.
               </p>
               <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                <Link href="/api/login">
-                  <Button size="xl" className="h-14 px-8 text-lg rounded-full w-full sm:w-auto shadow-xl shadow-primary/20">
-                    Start Your Journey
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                </Link>
+                <Button 
+                  size="xl" 
+                  className="h-14 px-8 text-lg rounded-full w-full sm:w-auto shadow-xl shadow-primary/20"
+                  onClick={() => window.location.href = "/api/login"}
+                >
+                  Start Your Journey
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
                 <Button variant="outline" size="xl" className="h-14 px-8 text-lg rounded-full w-full sm:w-auto">
                   Learn More
                 </Button>
