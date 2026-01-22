@@ -12,6 +12,8 @@ import MealLog from "@/pages/meal-log";
 import Coach from "@/pages/coach";
 import Reminders from "@/pages/reminders";
 import Profile from "@/pages/profile";
+import Recipes from "@/pages/recipes";
+import Trends from "@/pages/trends";
 import NotFound from "@/pages/not-found";
 
 // Protected Route Wrapper
@@ -48,6 +50,12 @@ function Router() {
       </Route>
       <Route path="/profile">
         <ProtectedRoute component={Profile} />
+      </Route>
+      <Route path="/recipes">
+        <ProtectedRoute component={Recipes} />
+      </Route>
+      <Route path="/trends">
+        <ProtectedRoute component={Trends} />
       </Route>
 
       {/* Fallback */}

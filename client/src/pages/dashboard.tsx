@@ -196,9 +196,11 @@ export default function Dashboard() {
               <h3 className="text-2xl font-bold mb-2">Gemini Deep Scan™</h3>
               <p className="text-gray-400">Our advanced AI has analyzed your last 7 days. You're maintaining a steady 15% protein surplus which is perfect for your goal.</p>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 h-auto text-lg rounded-2xl font-bold shadow-2xl shadow-primary/40">
-              View Trends
-            </Button>
+            <Link href="/trends">
+              <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 h-auto text-lg rounded-2xl font-bold shadow-2xl shadow-primary/40">
+                View Trends
+              </Button>
+            </Link>
           </div>
         </motion.div>
       )}
@@ -231,9 +233,11 @@ export default function Dashboard() {
                    <p className="text-[10px] text-gray-400">Perfect macros</p>
                  </div>
                </div>
-               <Button variant="outline" className="w-full border-dashed border-2 hover:border-primary hover:text-primary transition-all">
-                 Generate More Recipes
-               </Button>
+               <Link href="/recipes">
+                 <Button variant="outline" className="w-full border-dashed border-2 hover:border-primary hover:text-primary transition-all">
+                   Generate More Recipes
+                 </Button>
+               </Link>
              </div>
            </div>
          )}
