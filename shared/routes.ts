@@ -54,6 +54,15 @@ export const api = {
       }
     }
   },
+  analysis: {
+    gemini: {
+      method: 'POST' as const,
+      path: '/api/analysis/gemini',
+      responses: {
+        200: z.any(),
+      }
+    }
+  },
   foods: {
     list: {
       method: 'GET' as const,

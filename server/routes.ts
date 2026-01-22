@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { setupAuth } from "./replit_integrations/auth";
 import { registerAuthRoutes } from "./replit_integrations/auth";
 import { registerChatRoutes } from "./replit_integrations/chat";
+import { analyzeNutritionWithGemini } from "./replit_integrations/gemini/client";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
@@ -18,8 +19,6 @@ export async function registerRoutes(
   // Register Chat Routes (AI Advisor)
   registerChatRoutes(app);
 
-  // === API ROUTES ===
-
   // Middleware to ensure user is authenticated for API routes
   const requireAuth = (req: any, res: any, next: any) => {
     if (req.isAuthenticated()) {
@@ -27,6 +26,24 @@ export async function registerRoutes(
     }
     res.status(401).json({ message: "Unauthorized" });
   };
+
+  // === GEMINI ANALYSIS ROUTE ===
+  app.post("/api/analysis/gemini", requireAuth, async (req: any, res) => {
+    const userId = req.user.claims.sub;
+    try {
+      const profile = await storage.getProfile(userId);
+      const meals = await storage.getMealLogs(userId);
+      const foods = await storage.getFoods();
+      
+      const analysis = await analyzeNutritionWithGemini({ profile, meals, foods });
+      res.json(analysis);
+    } catch (error) {
+      console.error("Gemini Analysis Error:", error);
+      res.status(500).json({ message: "Analysis failed" });
+    }
+  });
+
+  // === API ROUTES ===
 
   // Profiles
   app.get(api.profiles.get.path, requireAuth, async (req, res) => {
