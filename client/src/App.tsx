@@ -1,10 +1,12 @@
-import { Switch, Route, Redirect } from "wouter";
+// Your updated App.tsx (keep this exactly as you have it – it will now work)
+
+import { Route } from "wouter";
+import { useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/use-auth";
-import { Layout } from "@/components/layout";
+import ProtectedRoute from "@/components/ProtectedRoute"; // ← This will now exist
 
 import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
@@ -14,62 +16,75 @@ import Reminders from "@/pages/reminders";
 import Profile from "@/pages/profile";
 import Recipes from "@/pages/recipes";
 import Trends from "@/pages/trends";
+import Login from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
-// Protected Route Wrapper
-function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const { user, isLoading } = useAuth();
+// Home route – redirects logged-in users to dashboard
+const HomeRoute = () => {
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const [, navigate] = useLocation();
 
-  if (isLoading) return <div className="h-screen w-full flex items-center justify-center bg-gray-50">Loading...</div>;
-  if (!user) return <Redirect to="/" />;
+  if (isLoggedIn) {
+    navigate("/dashboard");
+    return null;
+  }
 
-  return (
-    <Layout>
-      <Component />
-    </Layout>
-  );
-}
-
-function Router() {
-  return (
-    <Switch>
-      <Route path="/" component={Landing} />
-      
-      {/* Protected Routes */}
-      <Route path="/dashboard">
-        <ProtectedRoute component={Dashboard} />
-      </Route>
-      <Route path="/meals">
-        <ProtectedRoute component={MealLog} />
-      </Route>
-      <Route path="/coach">
-        <ProtectedRoute component={Coach} />
-      </Route>
-      <Route path="/reminders">
-        <ProtectedRoute component={Reminders} />
-      </Route>
-      <Route path="/profile">
-        <ProtectedRoute component={Profile} />
-      </Route>
-      <Route path="/recipes">
-        <ProtectedRoute component={Recipes} />
-      </Route>
-      <Route path="/trends">
-        <ProtectedRoute component={Trends} />
-      </Route>
-
-      {/* Fallback */}
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
+  return <Landing />;
+};
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        <Router />
+        <Route path="/" component={HomeRoute} />
+        <Route path="api/login" component={Login} />
+
+        <Route path="/dashboard">
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/meals">
+          <ProtectedRoute>
+            <MealLog />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/coach">
+          <ProtectedRoute>
+            <Coach />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/reminders">
+          <ProtectedRoute>
+            <Reminders />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/profile">
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/recipes">
+          <ProtectedRoute>
+            <Recipes />
+          </ProtectedRoute>
+        </Route>
+
+        <Route path="/trends">
+          <ProtectedRoute>
+            <Trends />
+          </ProtectedRoute>
+        </Route>
+
+        <Route>
+          <NotFound />
+        </Route>
       </TooltipProvider>
     </QueryClientProvider>
   );

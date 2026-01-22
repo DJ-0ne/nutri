@@ -5,109 +5,133 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-// Using the provided chat integration API
-// This is a customized interface for the nutrition context
+type Message = { role: "user" | "assistant"; content: string };
+
+// Initialize Gemini (use your API key from .env)
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
+// Or hardcode for testing: const apiKey = "your_actual_key_here";
+if (!apiKey) {
+  console.error("Gemini API key is missing! Check your .env file.");
+}
+const genAI = new GoogleGenerativeAI(apiKey);
+const model = genAI.getGenerativeModel({ 
+  model: "gemini-2.5-flash",  // Current stable fast model as of January 2026
+  systemInstruction: `
+    You are a friendly, expert Nutrition Coach AI for Kenyan users. 
+    Always respond in a warm, encouraging tone. 
+    Focus on Kenyan foods (ugali, sukuma wiki, githeri, nyama choma, chapati, mandazi, etc.) and local ingredients.
+    Use Swahili greetings/phrases occasionally (e.g., Jambo, Habari, Asante).
+    you can also generate pictures of food when asked
+    Be practical, culturally relevant, and evidence-based.
+    Keep responses concise but helpful (under 200 words unless asked for detail).
+  `,
+});
+
 export default function Coach() {
   const { data: profile } = useProfile();
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<{role: 'user' | 'assistant', content: string}[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  
-  // Create a conversation on mount if not exists
-  const [conversationId, setConversationId] = useState<number | null>(null);
 
+  // Welcome message on mount
   useEffect(() => {
-    // In a real app, you'd fetch existing conversations or create a new one
-    // For this demo, we'll create one on the fly
-    const initChat = async () => {
-      try {
-        const res = await fetch('/api/conversations', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ title: 'Nutrition Coach Session' })
-        });
-        const data = await res.json();
-        setConversationId(data.id);
-        
-        // Add welcome message locally
-        setMessages([{
-          role: 'assistant',
-          content: `Jambo! I'm your AI Nutrition Coach. I see you're aiming to ${profile?.dietaryGoals?.replace('_', ' ') || 'improve your health'}. How can I help you with your meals today?`
-        }]);
-      } catch (e) {
-        console.error("Failed to init chat", e);
-      }
-    };
-    initChat();
+    const welcome = `Jambo! 👋 I'm your AI Nutrition Coach. 
+I see you're aiming to ${profile?.dietaryGoals?.replace('_', ' ') || 'improve your health'}. 
+How can I help you today? Ask about meals, recipes, or nutrition tips!`;
+    
+    setMessages([{ role: "assistant", content: welcome }]);
   }, [profile]);
+
+  // Test Gemini connection on mount (diagnostic)
+  useEffect(() => {
+    async function testGemini() {
+      if (!apiKey) {
+        console.warn("Skipping Gemini test due to missing API key.");
+        return;
+      }
+      try {
+        console.log("Testing Gemini API connection...");
+        const result = await model.generateContent("Test query: Say hello.");
+        console.log("Gemini test successful! Response:", result.response.text());
+      } catch (error) {
+        console.error("Gemini test failed:", error);
+      }
+    }
+    testGemini();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !conversationId) return;
+    if (!input.trim() || isLoading) return;
 
-    const userMsg = input;
+    const userMessage = input.trim();
     setInput("");
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+
+    // Update messages synchronously for history building
+    let updatedMessages: Message[] = [...messages, { role: "user", content: userMessage }];
+    setMessages(updatedMessages);
+
     setIsLoading(true);
 
+    // Add empty assistant message
+    updatedMessages = [...updatedMessages, { role: "assistant", content: "" }];
+    setMessages(updatedMessages);
+
     try {
-      // Use the SSE endpoint provided by the Replit integration
-      const res = await fetch(`/api/conversations/${conversationId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          content: `Context: User is from Kenya. Goal: ${profile?.dietaryGoals}. 
-                    Question: ${userMsg}` 
-        }),
+      console.log("Building history for Gemini...");
+      // Build history excluding the empty assistant message
+      const history = updatedMessages.slice(0, -1).map(msg => ({
+        role: msg.role === "user" ? "user" : "model",
+        parts: [{ text: msg.content }],
+      }));
+      console.log("History built:", history);
+
+      console.log("Calling Gemini API...");
+      // Start streaming
+      const result = await model.generateContentStream({
+        contents: history,
       });
+      console.log("Gemini stream started.");
 
-      if (!res.ok) throw new Error('Failed to send');
-
-      // Handle SSE response
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let assistantMsg = "";
-      
-      setMessages(prev => [...prev, { role: 'assistant', content: "" }]);
-
-      while (true) {
-        const { done, value } = await reader!.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.content) {
-                assistantMsg += data.content;
-                setMessages(prev => {
-                  const newMsgs = [...prev];
-                  newMsgs[newMsgs.length - 1].content = assistantMsg;
-                  return newMsgs;
-                });
-              }
-            } catch (e) {
-              // Ignore parse errors on partial chunks
-            }
-          }
+      let assistantText = "";
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        if (text) {
+          assistantText += text;
+          console.log("Received chunk:", text);
+          // Update the last message
+          setMessages(prevMessages => {
+            const newMsgs = [...prevMessages];
+            newMsgs[newMsgs.length - 1].content = assistantText;
+            return newMsgs;
+          });
         }
       }
-    } catch (error) {
-      console.error(error);
+      console.log("Streaming complete. Full response:", assistantText);
+    } catch (error: any) {
+      console.error("Gemini error details:", {
+        message: error.message,
+        name: error.name,
+        stack: error.stack,
+        response: error.response ? error.response : null,
+      });
+      setMessages(prevMessages => {
+        const newMsgs = [...prevMessages];
+        newMsgs[newMsgs.length - 1].content = `Error: ${error.message || 'Unknown error'}. Check console for details.`;
+        return newMsgs;
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Auto scroll
+  // Auto-scroll to bottom
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, [messages]);
 
@@ -119,50 +143,46 @@ export default function Coach() {
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-900">Nutrition Coach AI</h2>
-          <p className="text-sm text-gray-500">Ask about Kenyan foods, recipes, or diet advice.</p>
+          <p className="text-sm text-gray-500">Powered by Gemini • Ask about Kenyan foods & nutrition</p>
         </div>
         {profile?.subscriptionTier === 'premium' && (
           <div className="ml-auto px-3 py-1 bg-yellow-400 text-black rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-lg shadow-yellow-500/20">
             <Zap className="w-3 h-3" /> Premium AI Active
           </div>
         )}
-        {profile?.subscriptionTier === 'free' && (
-          <div className="ml-auto px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-500">
-            Basic Mode
-          </div>
-        )}
       </div>
 
-      <ScrollArea className="flex-1 p-6" ref={scrollRef}>
-        <div className="space-y-6">
+      <ScrollArea className="flex-1 p-6">
+        <div className="space-y-6 pb-4">
           {messages.map((msg, i) => (
-            <div key={i} className={cn("flex gap-4", msg.role === 'user' ? "flex-row-reverse" : "")}>
+            <div key={i} className={cn("flex gap-4", msg.role === "user" ? "flex-row-reverse" : "")}>
               <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                msg.role === 'user' ? "bg-accent text-white" : "bg-primary text-white"
+                "w-10 h-10 rounded-full flex items-center justify-center shrink-0",
+                msg.role === "user" ? "bg-accent text-white" : "bg-primary text-white"
               )}>
-                {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                {msg.role === "user" ? <User className="w-5 h-5" /> : <Bot className="w-5 h-5" />}
               </div>
               <div className={cn(
-                "p-4 rounded-2xl max-w-[80%] leading-relaxed",
-                msg.role === 'user' 
+                "p-4 rounded-2xl max-w-[80%] leading-relaxed shadow-sm",
+                msg.role === "user" 
                   ? "bg-accent text-white rounded-tr-none" 
                   : "bg-gray-100 text-gray-800 rounded-tl-none"
               )}>
-                {msg.content}
+                {msg.content || <span className="text-gray-400 italic">Thinking...</span>}
               </div>
             </div>
           ))}
           {isLoading && (
             <div className="flex gap-4">
-               <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center shrink-0">
-                 <Bot className="w-4 h-4" />
-               </div>
-               <div className="bg-gray-100 p-4 rounded-2xl rounded-tl-none">
-                 <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-               </div>
+              <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shrink-0">
+                <Bot className="w-5 h-5" />
+              </div>
+              <div className="bg-gray-100 p-4 rounded-2xl rounded-tl-none">
+                <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+              </div>
             </div>
           )}
+          <div ref={scrollRef} />
         </div>
       </ScrollArea>
 
@@ -173,6 +193,7 @@ export default function Coach() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about healthy Ugali alternatives..."
             className="bg-white border-gray-200 focus-visible:ring-primary"
+            disabled={isLoading}
           />
           <Button type="submit" disabled={isLoading || !input.trim()} className="bg-primary hover:bg-primary/90">
             <Send className="w-4 h-4" />
