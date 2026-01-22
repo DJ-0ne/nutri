@@ -51,7 +51,7 @@ export default function MealLog() {
 
     try {
       await createLog.mutateAsync({
-        date: new Date(selectedDate),
+        date: selectedDate, // Pass the string directly as Zod expects it for the date transformation or we handle it in schema
         mealType: selectedMealType,
         totalCalories: Math.round(totalCalories),
         foodItems: foodItems as any

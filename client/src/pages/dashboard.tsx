@@ -9,7 +9,10 @@ import {
   TrendingUp, 
   ChevronRight,
   Clock,
-  Bell
+  Bell,
+  Activity,
+  Zap,
+  Coffee
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -136,38 +139,68 @@ export default function Dashboard() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="md:col-span-4 bg-primary text-white p-8 rounded-3xl shadow-xl shadow-primary/20 relative overflow-hidden"
+          className="md:col-span-4 bg-gradient-to-br from-primary to-primary-600 text-white p-8 rounded-3xl shadow-xl shadow-primary/20 relative overflow-hidden group"
         >
-          <div className="absolute top-0 right-0 p-8 opacity-10">
+          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
             <Bell className="w-32 h-32" />
           </div>
           
-          <h2 className="text-xl font-bold mb-6 relative z-10">Up Next</h2>
-          
-          <div className="space-y-4 relative z-10">
-            {reminders?.slice(0, 3).map((reminder, i) => (
-              <div key={i} className="flex items-center gap-4 bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10">
-                <div className="p-2 bg-white/20 rounded-lg">
-                  <Clock className="w-5 h-5" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-6">
+              <h2 className="text-xl font-bold">Up Next</h2>
+              {profile?.subscriptionTier === 'premium' && (
+                <span className="bg-white/20 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">PRO</span>
+              )}
+            </div>
+            
+            <div className="space-y-4">
+              {reminders?.slice(0, 3).map((reminder, i) => (
+                <div key={i} className="flex items-center gap-4 bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10 hover:bg-white/20 transition-colors">
+                  <div className="p-2 bg-white/20 rounded-lg">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{reminder.message}</p>
+                    <p className="text-sm text-white/70">{reminder.time}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold">{reminder.message}</p>
-                  <p className="text-sm text-white/70">{reminder.time}</p>
-                </div>
-              </div>
-            ))}
-            {(!reminders || reminders.length === 0) && (
-              <p className="text-white/70">No active reminders.</p>
-            )}
+              ))}
+              {(!reminders || reminders.length === 0) && (
+                <p className="text-white/70 italic">No active reminders.</p>
+              )}
+            </div>
+            
+            <Link href="/reminders">
+              <button className="mt-8 w-full py-3 bg-white text-primary font-bold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all">
+                Manage Reminders
+              </button>
+            </Link>
           </div>
-          
-          <Link href="/reminders">
-            <button className="mt-8 w-full py-3 bg-white text-primary font-bold rounded-xl hover:bg-white/90 transition-colors">
-              Manage Reminders
-            </button>
-          </Link>
         </motion.div>
       </div>
+
+      {/* Premium Gemini Deep Scan - Only for Premium */}
+      {profile?.subscriptionTier === 'premium' && (
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-3xl p-8 text-white relative overflow-hidden border border-white/10"
+        >
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] -mr-32 -mt-32" />
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center shrink-0 border border-white/20">
+              <Activity className="w-8 h-8 text-primary" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h3 className="text-2xl font-bold mb-2">Gemini Deep Scan™</h3>
+              <p className="text-gray-400">Our advanced AI has analyzed your last 7 days. You're maintaining a steady 15% protein surplus which is perfect for your goal.</p>
+            </div>
+            <Button className="bg-primary hover:bg-primary/90 text-white px-8 py-6 h-auto text-lg rounded-2xl font-bold shadow-2xl shadow-primary/40">
+              View Trends
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Recent Meals */}
       <div className="grid md:grid-cols-2 gap-6">

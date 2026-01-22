@@ -82,7 +82,12 @@ export const remindersRelations = relations(reminders, ({ one }) => ({
 
 export const insertProfileSchema = createInsertSchema(profiles).omit({ id: true, updatedAt: true, userId: true });
 export const insertFoodSchema = createInsertSchema(foods).omit({ id: true });
-export const insertMealLogSchema = createInsertSchema(mealLogs).omit({ id: true, userId: true });
+export const insertMealLogSchema = createInsertSchema(mealLogs, {
+  date: z.preprocess((arg) => {
+    if (typeof arg === "string" || arg instanceof Date) return new Date(arg);
+    return arg;
+  }, z.date()),
+}).omit({ id: true, userId: true });
 export const insertReminderSchema = createInsertSchema(reminders).omit({ id: true, userId: true });
 
 export type Profile = typeof profiles.$inferSelect;
