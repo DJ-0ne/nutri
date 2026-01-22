@@ -204,6 +204,39 @@ export default function Dashboard() {
 
       {/* Recent Meals */}
       <div className="grid md:grid-cols-2 gap-6">
+         {/* Premium Recipe Recommendations */}
+         {profile?.subscriptionTier === 'premium' && (
+           <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group">
+             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+               <Coffee className="w-24 h-24" />
+             </div>
+             <div className="flex justify-between items-center mb-6">
+               <div className="flex items-center gap-2">
+                 <h2 className="text-lg font-bold text-gray-900">Recommended for Dinner</h2>
+                 <span className="bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full font-bold">AI CHOICE</span>
+               </div>
+             </div>
+             <div className="space-y-4">
+               <div className="flex items-center gap-4 p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                 <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-2xl shadow-sm">
+                   🥣
+                 </div>
+                 <div className="flex-1">
+                   <p className="font-bold text-gray-900">High-Protein Githeri</p>
+                   <p className="text-xs text-gray-500">Optimized with lean beef and spinach</p>
+                 </div>
+                 <div className="text-right">
+                   <p className="font-bold text-primary">450 kcal</p>
+                   <p className="text-[10px] text-gray-400">Perfect macros</p>
+                 </div>
+               </div>
+               <Button variant="outline" className="w-full border-dashed border-2 hover:border-primary hover:text-primary transition-all">
+                 Generate More Recipes
+               </Button>
+             </div>
+           </div>
+         )}
+
          <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
            <div className="flex justify-between items-center mb-6">
              <h2 className="text-lg font-bold text-gray-900">Recent Meals</h2>

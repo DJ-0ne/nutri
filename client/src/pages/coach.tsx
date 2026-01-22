@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useProfile } from "@/hooks/use-nutrition";
-import { Send, Bot, User, Loader2 } from "lucide-react";
+import { Send, Bot, User, Loader2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -121,6 +121,11 @@ export default function Coach() {
           <h2 className="text-xl font-bold text-gray-900">Nutrition Coach AI</h2>
           <p className="text-sm text-gray-500">Ask about Kenyan foods, recipes, or diet advice.</p>
         </div>
+        {profile?.subscriptionTier === 'premium' && (
+          <div className="ml-auto px-3 py-1 bg-yellow-400 text-black rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 shadow-lg shadow-yellow-500/20">
+            <Zap className="w-3 h-3" /> Premium AI Active
+          </div>
+        )}
         {profile?.subscriptionTier === 'free' && (
           <div className="ml-auto px-3 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-500">
             Basic Mode
