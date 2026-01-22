@@ -8,7 +8,8 @@ import {
   Flame, 
   TrendingUp, 
   ChevronRight,
-  Clock
+  Clock,
+  Bell
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
